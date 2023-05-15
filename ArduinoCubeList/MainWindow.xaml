@@ -8,9 +8,9 @@
         Title="ArduinoCubeList" Height="630" Width="580">
     <Canvas x:Name="mainCanvas">
         <Image Source="/Resources/background.png" Height="554" Canvas.Top="10" Width="218" Canvas.Left="9"></Image>
-        <Button x:Name="Generate" Width="90" Height="30" Canvas.Left="411" Canvas.Top="466" Content="Enter State" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-        <Button x:Name="Generate_Copy" Width="90" Height="30" Canvas.Left="301" Canvas.Top="466" Content="New State" HorizontalAlignment="Left" VerticalAlignment="Top" />
-        <Button x:Name="Generate_Copy1" Width="90" Height="30" Canvas.Left="356" Canvas.Top="512" Content="Save Sequence" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+        <Button x:Name="EnterState" Width="90" Height="30" Canvas.Left="411" Canvas.Top="466" Content="Enter State" HorizontalAlignment="Left" VerticalAlignment="Top" Click="EnterState_Click"/>
+        <Button x:Name="NewState" Width="90" Height="30" Canvas.Left="301" Canvas.Top="466" Content="New State" HorizontalAlignment="Left" VerticalAlignment="Top" Click="NewState_Click" />
+        <Button x:Name="SaveSequence" Width="90" Height="30" Canvas.Left="356" Canvas.Top="512" Content="Save Sequence" HorizontalAlignment="Left" VerticalAlignment="Top" Click="SaveSequence_Click"/>
         <TextBox Width="100" Canvas.Left="379" Canvas.Top="431"></TextBox>
         <ListBox Width="200" Height="311" Canvas.Left="301" Canvas.Top="103" HorizontalAlignment="Left" VerticalAlignment="Top"></ListBox>
         <Label Canvas.Left="301" Canvas.Top="77">Sequence
