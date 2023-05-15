@@ -1,18 +1,11 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace ArduinoCubeList
 {
@@ -26,7 +19,9 @@ namespace ArduinoCubeList
             InitializeComponent();
             GenerateButtons();
         }
+        List<Sequence> sequences = new List<Sequence>();
         bool[,,] states = new bool[5, 5, 5];
+        int x = 1;
         private void GenerateButtons()
         {
             int rows = 5;
@@ -88,39 +83,88 @@ namespace ArduinoCubeList
 
         private void EnterState_Click(object sender, RoutedEventArgs e)
         {
-            int temp = 0;
-            string text = default;
-            for (int layer = 0; layer <= 4; layer++)
+            if(listBox.SelectedItem != null)
             {
-                for (int column = 0; column <= 4; column++)   
+              
+                int temp = 0;
+                string text = default;
+                for (int layer = 0; layer <= 4; layer++)
                 {
-                    for (int row = 0; row <= 4; row++)
+                    for (int column = 0; column <= 4; column++)
                     {
-                        temp += (int)(Convert.ToInt32(states[layer, column, row]) * Math.Pow(2, row + 1));
+                        for (int row = 0; row <= 4; row++)
+                        {
+                            temp += (int)(Convert.ToInt32(states[layer, column, row]) * Math.Pow(2, row + 1));
+                        }
+                        if (layer == 4 && column == 4)
+                        {
+                            text += temp;
+                        }
+                        else
+                        {
+                            text += temp + ",";
+                        }
+                        temp = 0;
                     }
-                    text += temp + ",";
-                    temp = 0;
+                }
+                int a;
+                if (int.TryParse(DelayTextBox.Text, out a))
+                {
+                    sequences[listBox.SelectedIndex].Diody = "{" + text + "}";
+                    sequences[listBox.SelectedIndex].Delay = a;
+                }
+                else
+                {
+                    MessageBox.Show("Enter correct delay");
                 }
             }
-            MessageBox.Show(text);
+            else
+            {
+                MessageBox.Show("Please select item from listbox");
+            }
         }
 
         private void NewState_Click(object sender, RoutedEventArgs e)
         {
-
+            listBox.Items.Add("Sequence" + x++);
+            sequences.Add(new Sequence());
         }
 
         private void SaveSequence_Click(object sender, RoutedEventArgs e)
-        {
-            string content = "";
-
-            string filePath = "/plik.txt";
-
-            using (StreamWriter writer = new StreamWriter(filePath))
+        {      
+            string diody = "const PROGMEM byte diody_r1[][25] = {";
+            string delay = "const PROGMEM int wait_r1[]={";
+            foreach (Sequence sequence in sequences)
             {
-                writer.Write(content);
+                diody += sequence.Diody;
+                delay += sequence.Delay;
+                if (sequence != sequences[sequences.Count-1])
+                {
+                    diody += ",";
+                    delay += ",";
+                }
+                else
+                {
+                    diody += "};";
+                    delay += "};";
+                }
+            }
+            SaveFileDialog sfd = new SaveFileDialog();
+            sfd.Filter = "Plik txt|*.txt";
+            sfd.Title = "Podaj nazwę pliku do zapisu danych";
+            sfd.ShowDialog();
+            if (sfd.FileName != "")
+            {
+                StreamWriter streamWriter = new StreamWriter(sfd.FileName);
+                streamWriter.WriteLine(diody);
+                streamWriter.WriteLine(delay);
+                streamWriter.Close();
             }
         }
-    }
 
+        private void listBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            
+        }
+    }
 }

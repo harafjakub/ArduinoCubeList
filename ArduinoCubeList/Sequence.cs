@@ -6,14 +6,17 @@ using System.Threading.Tasks;
 
 namespace ArduinoCubeList
 {
-    internal class Sequence
+    public class Sequence
     {
-        string diody;
-        int delay;
+        public string Diody { get; set; }
+        public int Delay { get; set; }
         public Sequence(string diody, int delay)
         {
-            this.diody = diody;
-            this.delay = delay;
+            this.Diody = diody;
+            this.Delay = delay;
+        }
+        public Sequence()
+        {
         }
     }
 }
