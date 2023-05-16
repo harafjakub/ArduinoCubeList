@@ -89,8 +89,9 @@ namespace ArduinoCubeList
                 int a;
                 if (int.TryParse(DelayTextBox.Text, out a))
                 {
-                    CopyArray(sequences[listBox.SelectedIndex].Diody, states);
+                    sequences[listBox.SelectedIndex].Diody = (bool[,,])states.Clone();
                     sequences[listBox.SelectedIndex].Delay = a;
+                    int b = 3;
                 }
                 else
                 {
@@ -244,7 +245,7 @@ namespace ArduinoCubeList
         private void listBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             int selectedIndex = listBox.SelectedIndex;
-            CopyArray(states, sequences[selectedIndex].Diody);
+            states = (bool[,,])sequences[selectedIndex].Diody.Clone();
             //states = sequences[selectedIndex].Diody;
             foreach (Button button in canvas.Children.OfType<Button>())
             {
@@ -284,19 +285,6 @@ namespace ArduinoCubeList
                 }
             }
             return text+"}";
-        }
-        private void CopyArray(bool[,,] array1, bool[,,] array2)
-        {
-            for (int layer = 0; layer <= 4; layer++)
-            {
-                for (int column = 0; column <= 4; column++)
-                {
-                    for (int row = 0; row <= 4; row++)
-                    {
-                        array1[layer, column, row] = array2[layer, column, row];
-                    }
-                }
-            }
         }
     }
 }
