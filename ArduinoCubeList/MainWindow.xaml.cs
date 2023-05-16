@@ -170,6 +170,7 @@ namespace ArduinoCubeList
                     streamWriter.WriteLine("const PROGMEM int wait_r1[]={" + sequence.Delay + "};");
                 }
 
+                streamWriter.WriteLine("");
                 streamWriter.WriteLine(diody);
                 streamWriter.WriteLine(delay);
                 streamWriter.Close();
