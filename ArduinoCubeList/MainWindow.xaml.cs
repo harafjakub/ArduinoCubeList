@@ -110,7 +110,7 @@ namespace ArduinoCubeList
                 //    }
                 //}
 
-                string text = ArrayToString(states);
+                //string text = ArrayToString(states);
 
                 int a;
                 if (int.TryParse(DelayTextBox.Text, out a))
@@ -164,41 +164,30 @@ namespace ArduinoCubeList
 
                 foreach (Sequence sequence in sequences)
                 {
-                    streamWriter.Write("{");
                     for (int layer = 0; layer <= 4; layer++)
                     {
-                        streamWriter.Write("{");
                         for (int column = 0; column <= 4; column++)
                         {
-                            streamWriter.Write("{");
                             for (int row = 0; row <= 4; row++)
                             {
-                                if(row<4)
+                                if(layer==4 && column == 4 && row == 4)
                                 {
                                     if (sequence.Diody[layer,column,row])
-                                        streamWriter.Write("true,");
-                                    else
-                                        streamWriter.Write("false,");
-                                }
-                                else
-                                {
-                                    if (sequence.Diody[layer, column, row])
                                         streamWriter.Write("true");
                                     else
                                         streamWriter.Write("false");
                                 }
+                                else
+                                {
+                                    if (sequence.Diody[layer, column, row])
+                                        streamWriter.Write("true,");
+                                    else
+                                        streamWriter.Write("false,");
+                                }
                             }
-                            if(column<4)
-                                streamWriter.Write("},");
-                            else
-                                streamWriter.Write("}");
                         }
-                        if (layer < 4)
-                            streamWriter.Write("},");
-                        else
-                            streamWriter.Write("}");
                     }
-                    streamWriter.Write("}\n");
+                    streamWriter.Write("\n");
                     streamWriter.WriteLine(sequence.Delay);
                 }
 
@@ -215,6 +204,51 @@ namespace ArduinoCubeList
                 streamWriter.WriteLine(diody);
                 streamWriter.WriteLine(delay);
                 streamWriter.Close();
+            }
+        }
+
+        private void LoadSequence_Click(object sender, RoutedEventArgs e)
+        {
+            listBox.Items.Clear();
+            sequences.Clear();
+            string tempString;
+            string[] tempString2;
+            bool[,,] tempBool = new bool[5,5,5];
+            int tempInt;
+            int tempInt2 = 1;
+            Sequence sequence;
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Filter = "Plik txt|*.txt";
+            ofd.Title = "Podaj nazwę pliku do odczytu danych";
+            ofd.ShowDialog();
+            if (ofd.FileName != "")
+            {
+                StreamReader streamReader= new StreamReader(ofd.FileName);
+                tempString = streamReader.ReadLine();
+                while (!tempString.Equals("[END]"))
+                {
+                    tempString2 = tempString.Split(',');
+                    tempInt = 0;
+                    for (int layer = 0; layer <= 4; layer++)
+                    {
+                        for (int column = 0; column <= 4; column++)
+                        {
+                            for (int row = 0; row <= 4; row++)
+                            {
+                                tempBool[layer,column,row] = Convert.ToBoolean(tempString2[tempInt]);
+                                tempInt++;
+                            }
+                        }
+                    }
+
+                    tempInt = Convert.ToInt32(streamReader.ReadLine());
+                    sequence = new Sequence(tempBool,tempInt);
+                    listBox.Items.Add("Sequence" + tempInt2);
+                    sequences.Add(sequence);
+                    tempInt2++;
+                    tempString = streamReader.ReadLine();
+                }
+                streamReader.Close();
             }
         }
 
@@ -248,6 +282,5 @@ namespace ArduinoCubeList
             }
             return text+"}";
         }
-        
     }
 }
