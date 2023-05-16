@@ -203,7 +203,6 @@ namespace ArduinoCubeList
             sequences.Clear();
             string tempString;
             string[] tempString2;
-            bool[,,] tempBool = new bool[5,5,5];
             int tempInt;
             int tempInt2 = 1;
             Sequence sequence;
@@ -219,20 +218,21 @@ namespace ArduinoCubeList
                 {
                     tempString2 = tempString.Split(',');
                     tempInt = 0;
+                    bool[,,] tempBool = new bool[5, 5, 5];
                     for (int layer = 0; layer <= 4; layer++)
                     {
                         for (int column = 0; column <= 4; column++)
                         {
                             for (int row = 0; row <= 4; row++)
                             {
-                                tempBool[layer,column,row] = Convert.ToBoolean(tempString2[tempInt]);
+                                tempBool[layer, column, row] = Convert.ToBoolean(tempString2[tempInt]);
                                 tempInt++;
                             }
                         }
                     }
 
                     tempInt = Convert.ToInt32(streamReader.ReadLine());
-                    sequence = new Sequence(tempBool,tempInt);
+                    sequence = new Sequence(tempBool, tempInt);
                     listBox.Items.Add("Sequence" + tempInt2);
                     sequences.Add(sequence);
                     tempInt2++;
@@ -242,24 +242,48 @@ namespace ArduinoCubeList
             }
         }
 
-        private void listBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void DeleteState_Click(object sender, RoutedEventArgs e)
         {
-            int selectedIndex = listBox.SelectedIndex;
-            states = (bool[,,])sequences[selectedIndex].Diody.Clone();
-            //states = sequences[selectedIndex].Diody;
-            foreach (Button button in canvas.Children.OfType<Button>())
+            if (listBox.SelectedIndex != -1)
             {
-                var temp = button.Tag.ToString().Split(',');
-                if (states[Convert.ToInt32(temp[0]), Convert.ToInt32(temp[1]), Convert.ToInt32(temp[2])]) {
-                    button.Background = Brushes.Red;
-                }
-                else
+                int selectedIndex = listBox.SelectedIndex;
+                listBox.Items.RemoveAt(selectedIndex);
+                sequences.RemoveAt(selectedIndex);
+                foreach (Button button in canvas.Children.OfType<Button>())
                 {
                     button.Background = Brushes.White;
-                }    
+                }
+                canvas.InvalidateVisual();
             }
-            canvas.InvalidateVisual();
+            else
+            {
+                MessageBox.Show("Select state to delete.");
+            }
         }
+
+        private void listBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (listBox.SelectedIndex >= 0 && listBox.SelectedIndex < sequences.Count)
+            {
+                int selectedIndex = listBox.SelectedIndex;
+                states = (bool[,,])sequences[selectedIndex].Diody.Clone();
+                DelayTextBox.Text = sequences[selectedIndex].Delay.ToString();
+                foreach (Button button in canvas.Children.OfType<Button>())
+                {
+                    var temp = button.Tag.ToString().Split(',');
+                    if (states[Convert.ToInt32(temp[0]), Convert.ToInt32(temp[1]), Convert.ToInt32(temp[2])])
+                    {
+                        button.Background = Brushes.Red;
+                    }
+                    else
+                    {
+                        button.Background = Brushes.White;
+                    }
+                }
+                canvas.InvalidateVisual();
+            }
+        }
+
 
         private String ArrayToString(bool[,,] states)
         {
@@ -286,5 +310,7 @@ namespace ArduinoCubeList
             }
             return text+"}";
         }
+
+        
     }
 }
