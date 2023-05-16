@@ -156,6 +156,20 @@ namespace ArduinoCubeList
             if (sfd.FileName != "")
             {
                 StreamWriter streamWriter = new StreamWriter(sfd.FileName);
+
+                foreach (Sequence sequence in sequences)
+                {
+                    streamWriter.WriteLine(sequence.Diody);
+                    streamWriter.WriteLine(sequence.Delay);
+                }
+
+                foreach (Sequence sequence in sequences)
+                {
+                    streamWriter.WriteLine("");
+                    streamWriter.WriteLine("const PROGMEM byte diody_r1[][25] = {" + sequence.Diody + "};");
+                    streamWriter.WriteLine("const PROGMEM int wait_r1[]={" + sequence.Delay + "};");
+                }
+
                 streamWriter.WriteLine(diody);
                 streamWriter.WriteLine(delay);
                 streamWriter.Close();
