@@ -6,6 +6,8 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Navigation;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace ArduinoCubeList
 {
@@ -85,32 +87,35 @@ namespace ArduinoCubeList
         {
             if(listBox.SelectedItem != null)
             {
-              
-                int temp = 0;
-                string text = default;
-                for (int layer = 0; layer <= 4; layer++)
-                {
-                    for (int column = 0; column <= 4; column++)
-                    {
-                        for (int row = 0; row <= 4; row++)
-                        {
-                            temp += (int)(Convert.ToInt32(states[layer, column, row]) * Math.Pow(2, row + 1));
-                        }
-                        if (layer == 4 && column == 4)
-                        {
-                            text += temp;
-                        }
-                        else
-                        {
-                            text += temp + ",";
-                        }
-                        temp = 0;
-                    }
-                }
+
+                //int temp = 0;
+                //string text = default;
+                //for (int layer = 0; layer <= 4; layer++)
+                //{
+                //    for (int column = 0; column <= 4; column++)
+                //    {
+                //        for (int row = 0; row <= 4; row++)
+                //        {
+                //            temp += (int)(Convert.ToInt32(states[layer, column, row]) * Math.Pow(2, row + 1));
+                //        }
+                //        if (layer == 4 && column == 4)
+                //        {
+                //            text += temp;
+                //        }
+                //        else
+                //        {
+                //            text += temp + ",";
+                //        }
+                //        temp = 0;
+                //    }
+                //}
+
+                string text = ArrayToString(states);
+
                 int a;
                 if (int.TryParse(DelayTextBox.Text, out a))
                 {
-                    sequences[listBox.SelectedIndex].Diody = "{" + text + "}";
+                    sequences[listBox.SelectedIndex].Diody = states;
                     sequences[listBox.SelectedIndex].Delay = a;
                 }
                 else
@@ -136,7 +141,7 @@ namespace ArduinoCubeList
             string delay = "const PROGMEM int wait_r1[]={";
             foreach (Sequence sequence in sequences)
             {
-                diody += sequence.Diody;
+                diody += ArrayToString(sequence.Diody);
                 delay += sequence.Delay;
                 if (sequence != sequences[sequences.Count-1])
                 {
@@ -159,14 +164,50 @@ namespace ArduinoCubeList
 
                 foreach (Sequence sequence in sequences)
                 {
-                    streamWriter.WriteLine(sequence.Diody);
+                    streamWriter.Write("{");
+                    for (int layer = 0; layer <= 4; layer++)
+                    {
+                        streamWriter.Write("{");
+                        for (int column = 0; column <= 4; column++)
+                        {
+                            streamWriter.Write("{");
+                            for (int row = 0; row <= 4; row++)
+                            {
+                                if(row<4)
+                                {
+                                    if (sequence.Diody[layer,column,row])
+                                        streamWriter.Write("true,");
+                                    else
+                                        streamWriter.Write("false,");
+                                }
+                                else
+                                {
+                                    if (sequence.Diody[layer, column, row])
+                                        streamWriter.Write("true");
+                                    else
+                                        streamWriter.Write("false");
+                                }
+                            }
+                            if(column<4)
+                                streamWriter.Write("},");
+                            else
+                                streamWriter.Write("}");
+                        }
+                        if (layer < 4)
+                            streamWriter.Write("},");
+                        else
+                            streamWriter.Write("}");
+                    }
+                    streamWriter.Write("}\n");
                     streamWriter.WriteLine(sequence.Delay);
                 }
+
+                streamWriter.WriteLine("[END]");
 
                 foreach (Sequence sequence in sequences)
                 {
                     streamWriter.WriteLine("");
-                    streamWriter.WriteLine("const PROGMEM byte diody_r1[][25] = {" + sequence.Diody + "};");
+                    streamWriter.WriteLine("const PROGMEM byte diody_r1[][25] = {" + ArrayToString(sequence.Diody) + "};");
                     streamWriter.WriteLine("const PROGMEM int wait_r1[]={" + sequence.Delay + "};");
                 }
 
@@ -181,5 +222,32 @@ namespace ArduinoCubeList
         {
             
         }
+
+        private String ArrayToString(bool[,,] states)
+        {
+            int temp = 0;
+            string text = "{";
+            for (int layer = 0; layer <= 4; layer++)
+            {
+                for (int column = 0; column <= 4; column++)
+                {
+                    for (int row = 0; row <= 4; row++)
+                    {
+                        temp += (int)(Convert.ToInt32(states[layer, column, row]) * Math.Pow(2, row + 1));
+                    }
+                    if (layer == 4 && column == 4)
+                    {
+                        text += temp;
+                    }
+                    else
+                    {
+                        text += temp + ",";
+                    }
+                    temp = 0;
+                }
+            }
+            return text+"}";
+        }
+        
     }
 }
