@@ -24,6 +24,7 @@ namespace ArduinoCubeList
         List<Sequence> sequences = new List<Sequence>();
         bool[,,] states = new bool[5, 5, 5];
         int x = 1;
+        Canvas canvas = new Canvas();
         private void GenerateButtons()
         {
             int rows = 5;
@@ -33,8 +34,6 @@ namespace ArduinoCubeList
             double buttonSpacingLeft = 20;
             double buttonSpacingTop = 11;
             double[] rowSpacing = { 102, 79, 56, 33, 10 };
-
-            Canvas canvas = new Canvas();
 
             for (int layer = 0; layer < layers; layer++)
             {
@@ -87,35 +86,10 @@ namespace ArduinoCubeList
         {
             if(listBox.SelectedItem != null)
             {
-
-                //int temp = 0;
-                //string text = default;
-                //for (int layer = 0; layer <= 4; layer++)
-                //{
-                //    for (int column = 0; column <= 4; column++)
-                //    {
-                //        for (int row = 0; row <= 4; row++)
-                //        {
-                //            temp += (int)(Convert.ToInt32(states[layer, column, row]) * Math.Pow(2, row + 1));
-                //        }
-                //        if (layer == 4 && column == 4)
-                //        {
-                //            text += temp;
-                //        }
-                //        else
-                //        {
-                //            text += temp + ",";
-                //        }
-                //        temp = 0;
-                //    }
-                //}
-
-                //string text = ArrayToString(states);
-
                 int a;
                 if (int.TryParse(DelayTextBox.Text, out a))
                 {
-                    sequences[listBox.SelectedIndex].Diody = states;
+                    CopyArray(sequences[listBox.SelectedIndex].Diody, states);
                     sequences[listBox.SelectedIndex].Delay = a;
                 }
                 else
@@ -132,7 +106,22 @@ namespace ArduinoCubeList
         private void NewState_Click(object sender, RoutedEventArgs e)
         {
             listBox.Items.Add("Sequence" + x++);
-            sequences.Add(new Sequence());
+            for (int i = 0; i < states.GetLength(0); i++)
+            {
+                for (int j = 0; j < states.GetLength(1); j++)
+                {
+                    for (int k = 0; k < states.GetLength(2); k++)
+                    {
+                        states[i, j, k] = false;
+                    }
+                }
+            }
+            sequences.Add(new Sequence(states,0));
+            foreach (Button button in canvas.Children.OfType<Button>())
+            {
+                button.Background = Brushes.White;
+            }
+            canvas.InvalidateVisual();
         }
 
         private void SaveSequence_Click(object sender, RoutedEventArgs e)
@@ -254,7 +243,21 @@ namespace ArduinoCubeList
 
         private void listBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            
+            int selectedIndex = listBox.SelectedIndex;
+            CopyArray(states, sequences[selectedIndex].Diody);
+            //states = sequences[selectedIndex].Diody;
+            foreach (Button button in canvas.Children.OfType<Button>())
+            {
+                var temp = button.Tag.ToString().Split(',');
+                if (states[Convert.ToInt32(temp[0]), Convert.ToInt32(temp[1]), Convert.ToInt32(temp[2])]) {
+                    button.Background = Brushes.Red;
+                }
+                else
+                {
+                    button.Background = Brushes.White;
+                }    
+            }
+            canvas.InvalidateVisual();
         }
 
         private String ArrayToString(bool[,,] states)
@@ -281,6 +284,19 @@ namespace ArduinoCubeList
                 }
             }
             return text+"}";
+        }
+        private void CopyArray(bool[,,] array1, bool[,,] array2)
+        {
+            for (int layer = 0; layer <= 4; layer++)
+            {
+                for (int column = 0; column <= 4; column++)
+                {
+                    for (int row = 0; row <= 4; row++)
+                    {
+                        array1[layer, column, row] = array2[layer, column, row];
+                    }
+                }
+            }
         }
     }
 }
