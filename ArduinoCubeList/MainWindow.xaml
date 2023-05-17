@@ -9,8 +9,10 @@
     <Canvas x:Name="mainCanvas">
         <Image Source="/Resources/background.png" Height="554" Canvas.Top="10" Width="218" Canvas.Left="9"></Image>
         <Button x:Name="EnterState" Width="90" Height="30" Canvas.Left="403" Canvas.Top="479" Content="Enter State" HorizontalAlignment="Left" VerticalAlignment="Top" Click="EnterState_Click"/>
-        <Button x:Name="DeleteState" Width="90" Height="30" Canvas.Left="353" Canvas.Top="520" Content="Delete State" HorizontalAlignment="Left" VerticalAlignment="Top" Click="DeleteState_Click"/>
+        <Button x:Name="ClearState" Width="90" Height="30" Canvas.Left="303" Canvas.Top="520" Content="Clear State" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ClearState_Click"/>
+        <Button x:Name="DeleteState" Width="90" Height="30" Canvas.Left="403" Canvas.Top="520" Content="Delete State" HorizontalAlignment="Left" VerticalAlignment="Top" Click="DeleteState_Click"/>
         <Button x:Name="NewState" Width="90" Height="30" Canvas.Left="303" Canvas.Top="479" Content="New State" HorizontalAlignment="Left" VerticalAlignment="Top" Click="NewState_Click" />
+        <CheckBox x:Name="ArduinoCheck" Canvas.Left="303" Canvas.Top="20" Content="Arduino File"></CheckBox>
         <Button x:Name="SaveSequence" Width="90" Height="30" Canvas.Left="303" Canvas.Top="46" Content="Save Sequence" HorizontalAlignment="Left" VerticalAlignment="Top" Click="SaveSequence_Click"/>
         <Button x:Name="LoadSequence" Width="90" Height="30" Canvas.Left="403" Canvas.Top="46" Content="Load Sequence" HorizontalAlignment="Left" VerticalAlignment="Top" Click="LoadSequence_Click"/>
         <TextBox Width="100" Canvas.Left="374" Canvas.Top="445" Name="DelayTextBox">0</TextBox>

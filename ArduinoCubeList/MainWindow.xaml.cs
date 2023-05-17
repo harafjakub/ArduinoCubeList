@@ -21,6 +21,7 @@ namespace ArduinoCubeList
         {
             InitializeComponent();
             GenerateButtons();
+            CheckButtons();
         }
         String[] code = new string[2] { "int dataPin = 2;\r\nint latchPin = 3;\r\nint clockPin = 4;\r\nbyte diody[25][25];\r\nint wait[25];\r\n\r\n\r\nvoid setup() \r\n{\r\n  pinMode(latchPin, OUTPUT);\r\n  pinMode(clockPin, OUTPUT);\r\n  pinMode(dataPin, OUTPUT);\r\n  pinMode(5, OUTPUT);\r\n  pinMode(6, OUTPUT);\r\n  pinMode(7, OUTPUT);\r\n  pinMode(8, OUTPUT);\r\n  pinMode(9, OUTPUT);\r\n  for (int j=5; j<10; j++) digitalWrite(j, LOW);\r\n}\r\n\r\nvoid loop() \r\n{\r\n  run_sequence(5,diody_r1,wait_r1,sizeof(wait_r1)/sizeof(int));\r\n}\r\n\r\nvoid lightcube(int nr,byte diody[][25])\r\n{\r\n  for(int i=0;i<5;i++)\r\n  {\r\n      digitalWrite(latchPin,LOW);\r\n      shiftOut(dataPin, clockPin, MSBFIRST, diody[nr][i*5+0]);\r\n      shiftOut(dataPin, clockPin, MSBFIRST, diody[nr][i*5+1]);\r\n      shiftOut(dataPin, clockPin, MSBFIRST, diody[nr][i*5+2]);\r\n      shiftOut(dataPin, clockPin, MSBFIRST, diody[nr][i*5+3]);\r\n      shiftOut(dataPin, clockPin, MSBFIRST, diody[nr][i*5+4]);\r\n      for (int j=5;j<10;j++) digitalWrite(j, LOW);\r\n      digitalWrite(latchPin, HIGH);\r\n      digitalWrite(i+5, HIGH);\r\n      delayMicroseconds(30);\r\n  }\r\n}", "\r\nvoid run_sequence (int times, const byte diody_t[][25], const int wait_t[], int rozmiar)\r\n{\r\n  unsigned long start;\r\n  for (int i=0; i<rozmiar; i++)\r\n  {\r\n    wait[i] = pgm_read_word(&wait_t[i]);\r\n    for (int j=0;j<25;j++) diody[i][j] = pgm_read_byte(&diody_t[i][j]);\r\n  }\r\n  for (int i=0;i<times;i++)\r\n  {\r\n    for(int k=0;k<rozmiar;k++)\r\n    {\r\n      start = millis();\r\n      while (millis() - start < wait[k]) lightcube(k,diody);\r\n    }\r\n  }\r\n}\r\n" };
         List<Sequence> sequences = new List<Sequence>();
@@ -108,7 +109,14 @@ namespace ArduinoCubeList
 
         private void NewState_Click(object sender, RoutedEventArgs e)
         {
-            listBox.Items.Add("Sequence" + x++);
+            int tempInt = listBox.SelectedIndex+1;
+            listBox.Items.Add("Sequence" + (listBox.SelectedIndex + 2));
+            x++;
+            for (int i = listBox.SelectedIndex + 1; i < listBox.Items.Count; i++)
+            {
+                listBox.Items[i] = "Sequence" + (i + 1);
+            }
+
             for (int i = 0; i < states.GetLength(0); i++)
             {
                 for (int j = 0; j < states.GetLength(1); j++)
@@ -119,12 +127,12 @@ namespace ArduinoCubeList
                     }
                 }
             }
-            sequences.Add(new Sequence(states,0));
-            foreach (Button button in canvas.Children.OfType<Button>())
-            {
-                button.Background = Brushes.White;
-            }
+
+            sequences.Insert(listBox.SelectedIndex + 1, new Sequence(states, 0));
+
             canvas.InvalidateVisual();
+            CheckButtons();
+            listBox.SelectedIndex = tempInt;
         }
 
         private void SaveSequence_Click(object sender, RoutedEventArgs e)
@@ -152,8 +160,6 @@ namespace ArduinoCubeList
             sfd.ShowDialog();
             if (sfd.FileName != "")
             {
-                string folder = sfd.FileName.Substring(0, sfd.FileName.Length - 4);
-                string plik = Path.GetFileName(sfd.FileName).Substring(0, Path.GetFileName(sfd.FileName).Length - 4)+".ino";
 
                 StreamWriter streamWriter = new StreamWriter(sfd.FileName);
                 foreach (Sequence sequence in sequences)
@@ -199,22 +205,28 @@ namespace ArduinoCubeList
                 streamWriter.WriteLine(delay);
                 streamWriter.Close();
 
-                if(!Directory.Exists(folder))
-                    Directory.CreateDirectory(folder);
+                if ((bool)ArduinoCheck.IsChecked)
+                {
+                    string folder = sfd.FileName.Substring(0, sfd.FileName.Length - 4);
+                    string plik = Path.GetFileName(sfd.FileName).Substring(0, Path.GetFileName(sfd.FileName).Length - 4) + ".ino";
+                    if (!Directory.Exists(folder))
+                        Directory.CreateDirectory(folder);
 
 
-                streamWriter = new StreamWriter(folder+"/"+plik);
+                    streamWriter = new StreamWriter(folder + "/" + plik);
 
-                streamWriter.WriteLine(diody);
-                streamWriter.WriteLine(delay +"\n");
-                streamWriter.WriteLine(code[0]);
-                streamWriter.WriteLine(code[1]);
-                streamWriter.Close();
+                    streamWriter.WriteLine(diody);
+                    streamWriter.WriteLine(delay + "\n");
+                    streamWriter.WriteLine(code[0]);
+                    streamWriter.WriteLine(code[1]);
+                    streamWriter.Close();
+                }
             }
         }
 
         private void LoadSequence_Click(object sender, RoutedEventArgs e)
         {
+            x = 1;
             listBox.Items.Clear();
             sequences.Clear();
             string tempString;
@@ -255,6 +267,7 @@ namespace ArduinoCubeList
                 }
                 streamReader.Close();
             }
+            CheckButtons();
         }
 
         private void DeleteState_Click(object sender, RoutedEventArgs e)
@@ -262,6 +275,8 @@ namespace ArduinoCubeList
             if (listBox.SelectedIndex != -1)
             {
                 int selectedIndex = listBox.SelectedIndex;
+                if(listBox.Items.Count>1)
+                    listBox.SelectedIndex--;
                 listBox.Items.RemoveAt(selectedIndex);
                 sequences.RemoveAt(selectedIndex);
                 foreach (Button button in canvas.Children.OfType<Button>())
@@ -273,6 +288,25 @@ namespace ArduinoCubeList
             else
             {
                 MessageBox.Show("Select state to delete.");
+            }
+            CheckButtons();
+        }
+
+        private void ClearState_Click(object sender, RoutedEventArgs e)
+        {
+            for (int i = 0; i < states.GetLength(0); i++)
+            {
+                for (int j = 0; j < states.GetLength(1); j++)
+                {
+                    for (int k = 0; k < states.GetLength(2); k++)
+                    {
+                        states[i, j, k] = false;
+                    }
+                }
+            }
+            foreach (Button button in canvas.Children.OfType<Button>())
+            {
+                button.Background = Brushes.White;
             }
         }
 
@@ -324,6 +358,38 @@ namespace ArduinoCubeList
                 }
             }
             return text+"}";
+        }
+
+        private void CheckButtons()
+        {
+            if(listBox.Items.Count == 0)
+            {
+                foreach (Button button in canvas.Children.OfType<Button>())
+                {
+                    button.IsEnabled = false;
+                }
+                SaveSequence.IsEnabled = false;
+                EnterState.IsEnabled = false;
+                ClearState.IsEnabled = false;
+                DeleteState.IsEnabled = false;
+                ArduinoCheck.IsEnabled = false;
+                DelayTextBox.IsEnabled = false;
+
+            }
+            else if (listBox.Items.Count>0)
+            {
+                foreach (Button button in canvas.Children.OfType<Button>())
+                {
+                    button.IsEnabled = true;
+                }
+                SaveSequence.IsEnabled = true;
+                EnterState.IsEnabled = true;
+                ClearState.IsEnabled = true;
+                DeleteState.IsEnabled = true;
+                ArduinoCheck.IsEnabled = true;
+                DelayTextBox.IsEnabled = true;
+            }
+
         }
 
         
