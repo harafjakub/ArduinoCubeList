@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -21,6 +22,7 @@ namespace ArduinoCubeList
             InitializeComponent();
             GenerateButtons();
         }
+        String[] code = new string[2] { "int dataPin = 2;\r\nint latchPin = 3;\r\nint clockPin = 4;\r\nbyte diody[25][25];\r\nint wait[25];\r\n\r\n\r\nvoid setup() \r\n{\r\n  pinMode(latchPin, OUTPUT);\r\n  pinMode(clockPin, OUTPUT);\r\n  pinMode(dataPin, OUTPUT);\r\n  pinMode(5, OUTPUT);\r\n  pinMode(6, OUTPUT);\r\n  pinMode(7, OUTPUT);\r\n  pinMode(8, OUTPUT);\r\n  pinMode(9, OUTPUT);\r\n  for (int j=5; j<10; j++) digitalWrite(j, LOW);\r\n}\r\n\r\nvoid loop() \r\n{\r\n  run_sequence(5,diody_r1,wait_r1,sizeof(wait_r1)/sizeof(int));\r\n}\r\n\r\nvoid lightcube(int nr,byte diody[][25])\r\n{\r\n  for(int i=0;i<5;i++)\r\n  {\r\n      digitalWrite(latchPin,LOW);\r\n      shiftOut(dataPin, clockPin, MSBFIRST, diody[nr][i*5+0]);\r\n      shiftOut(dataPin, clockPin, MSBFIRST, diody[nr][i*5+1]);\r\n      shiftOut(dataPin, clockPin, MSBFIRST, diody[nr][i*5+2]);\r\n      shiftOut(dataPin, clockPin, MSBFIRST, diody[nr][i*5+3]);\r\n      shiftOut(dataPin, clockPin, MSBFIRST, diody[nr][i*5+4]);\r\n      for (int j=5;j<10;j++) digitalWrite(j, LOW);\r\n      digitalWrite(latchPin, HIGH);\r\n      digitalWrite(i+5, HIGH);\r\n      delayMicroseconds(30);\r\n  }\r\n}", "\r\nvoid run_sequence (int times, const byte diody_t[][25], const int wait_t[], int rozmiar)\r\n{\r\n  unsigned long start;\r\n  for (int i=0; i<rozmiar; i++)\r\n  {\r\n    wait[i] = pgm_read_word(&wait_t[i]);\r\n    for (int j=0;j<25;j++) diody[i][j] = pgm_read_byte(&diody_t[i][j]);\r\n  }\r\n  for (int i=0;i<times;i++)\r\n  {\r\n    for(int k=0;k<rozmiar;k++)\r\n    {\r\n      start = millis();\r\n      while (millis() - start < wait[k]) lightcube(k,diody);\r\n    }\r\n  }\r\n}\r\n" };
         List<Sequence> sequences = new List<Sequence>();
         bool[,,] states = new bool[5, 5, 5];
         int x = 1;
@@ -150,8 +152,10 @@ namespace ArduinoCubeList
             sfd.ShowDialog();
             if (sfd.FileName != "")
             {
-                StreamWriter streamWriter = new StreamWriter(sfd.FileName);
+                string folder = sfd.FileName.Substring(0, sfd.FileName.Length - 4);
+                string plik = Path.GetFileName(sfd.FileName).Substring(0, Path.GetFileName(sfd.FileName).Length - 4)+".ino";
 
+                StreamWriter streamWriter = new StreamWriter(sfd.FileName);
                 foreach (Sequence sequence in sequences)
                 {
                     for (int layer = 0; layer <= 4; layer++)
@@ -194,6 +198,18 @@ namespace ArduinoCubeList
                 streamWriter.WriteLine(diody);
                 streamWriter.WriteLine(delay);
                 streamWriter.Close();
+
+                if(!Directory.Exists(folder))
+                    Directory.CreateDirectory(folder);
+
+
+                streamWriter = new StreamWriter(folder+"/"+plik);
+
+                streamWriter.WriteLine(diody);
+                streamWriter.WriteLine(delay +"\n");
+                streamWriter.WriteLine(code[0]);
+                streamWriter.WriteLine(code[1]);
+                streamWriter.Close();
             }
         }
 
@@ -204,7 +220,6 @@ namespace ArduinoCubeList
             string tempString;
             string[] tempString2;
             int tempInt;
-            int tempInt2 = 1;
             Sequence sequence;
             OpenFileDialog ofd = new OpenFileDialog();
             ofd.Filter = "Plik txt|*.txt";
@@ -233,9 +248,9 @@ namespace ArduinoCubeList
 
                     tempInt = Convert.ToInt32(streamReader.ReadLine());
                     sequence = new Sequence(tempBool, tempInt);
-                    listBox.Items.Add("Sequence" + tempInt2);
+                    listBox.Items.Add("Sequence" + x);
                     sequences.Add(sequence);
-                    tempInt2++;
+                    x++;
                     tempString = streamReader.ReadLine();
                 }
                 streamReader.Close();
