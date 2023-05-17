@@ -24,6 +24,7 @@ namespace ArduinoCubeList
         List<Sequence> sequences = new List<Sequence>();
         bool[,,] states = new bool[5, 5, 5];
         int x = 1;
+        Canvas canvas = new Canvas();
         private void GenerateButtons()
         {
             int rows = 5;
@@ -33,8 +34,6 @@ namespace ArduinoCubeList
             double buttonSpacingLeft = 20;
             double buttonSpacingTop = 11;
             double[] rowSpacing = { 102, 79, 56, 33, 10 };
-
-            Canvas canvas = new Canvas();
 
             for (int layer = 0; layer < layers; layer++)
             {
@@ -87,36 +86,12 @@ namespace ArduinoCubeList
         {
             if(listBox.SelectedItem != null)
             {
-
-                //int temp = 0;
-                //string text = default;
-                //for (int layer = 0; layer <= 4; layer++)
-                //{
-                //    for (int column = 0; column <= 4; column++)
-                //    {
-                //        for (int row = 0; row <= 4; row++)
-                //        {
-                //            temp += (int)(Convert.ToInt32(states[layer, column, row]) * Math.Pow(2, row + 1));
-                //        }
-                //        if (layer == 4 && column == 4)
-                //        {
-                //            text += temp;
-                //        }
-                //        else
-                //        {
-                //            text += temp + ",";
-                //        }
-                //        temp = 0;
-                //    }
-                //}
-
-                string text = ArrayToString(states);
-
                 int a;
                 if (int.TryParse(DelayTextBox.Text, out a))
                 {
-                    sequences[listBox.SelectedIndex].Diody = states;
+                    sequences[listBox.SelectedIndex].Diody = (bool[,,])states.Clone();
                     sequences[listBox.SelectedIndex].Delay = a;
+                    int b = 3;
                 }
                 else
                 {
@@ -132,7 +107,22 @@ namespace ArduinoCubeList
         private void NewState_Click(object sender, RoutedEventArgs e)
         {
             listBox.Items.Add("Sequence" + x++);
-            sequences.Add(new Sequence());
+            for (int i = 0; i < states.GetLength(0); i++)
+            {
+                for (int j = 0; j < states.GetLength(1); j++)
+                {
+                    for (int k = 0; k < states.GetLength(2); k++)
+                    {
+                        states[i, j, k] = false;
+                    }
+                }
+            }
+            sequences.Add(new Sequence(states,0));
+            foreach (Button button in canvas.Children.OfType<Button>())
+            {
+                button.Background = Brushes.White;
+            }
+            canvas.InvalidateVisual();
         }
 
         private void SaveSequence_Click(object sender, RoutedEventArgs e)
@@ -145,7 +135,7 @@ namespace ArduinoCubeList
                 delay += sequence.Delay;
                 if (sequence != sequences[sequences.Count-1])
                 {
-                    diody += ",";
+                    diody += ",\n";
                     delay += ",";
                 }
                 else
@@ -164,41 +154,30 @@ namespace ArduinoCubeList
 
                 foreach (Sequence sequence in sequences)
                 {
-                    streamWriter.Write("{");
                     for (int layer = 0; layer <= 4; layer++)
                     {
-                        streamWriter.Write("{");
                         for (int column = 0; column <= 4; column++)
                         {
-                            streamWriter.Write("{");
                             for (int row = 0; row <= 4; row++)
                             {
-                                if(row<4)
+                                if(layer==4 && column == 4 && row == 4)
                                 {
                                     if (sequence.Diody[layer,column,row])
-                                        streamWriter.Write("true,");
-                                    else
-                                        streamWriter.Write("false,");
-                                }
-                                else
-                                {
-                                    if (sequence.Diody[layer, column, row])
                                         streamWriter.Write("true");
                                     else
                                         streamWriter.Write("false");
                                 }
+                                else
+                                {
+                                    if (sequence.Diody[layer, column, row])
+                                        streamWriter.Write("true,");
+                                    else
+                                        streamWriter.Write("false,");
+                                }
                             }
-                            if(column<4)
-                                streamWriter.Write("},");
-                            else
-                                streamWriter.Write("}");
                         }
-                        if (layer < 4)
-                            streamWriter.Write("},");
-                        else
-                            streamWriter.Write("}");
                     }
-                    streamWriter.Write("}\n");
+                    streamWriter.Write("\n");
                     streamWriter.WriteLine(sequence.Delay);
                 }
 
@@ -218,10 +197,93 @@ namespace ArduinoCubeList
             }
         }
 
+        private void LoadSequence_Click(object sender, RoutedEventArgs e)
+        {
+            listBox.Items.Clear();
+            sequences.Clear();
+            string tempString;
+            string[] tempString2;
+            int tempInt;
+            int tempInt2 = 1;
+            Sequence sequence;
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Filter = "Plik txt|*.txt";
+            ofd.Title = "Podaj nazwę pliku do odczytu danych";
+            ofd.ShowDialog();
+            if (ofd.FileName != "")
+            {
+                StreamReader streamReader= new StreamReader(ofd.FileName);
+                tempString = streamReader.ReadLine();
+                while (!tempString.Equals("[END]"))
+                {
+                    tempString2 = tempString.Split(',');
+                    tempInt = 0;
+                    bool[,,] tempBool = new bool[5, 5, 5];
+                    for (int layer = 0; layer <= 4; layer++)
+                    {
+                        for (int column = 0; column <= 4; column++)
+                        {
+                            for (int row = 0; row <= 4; row++)
+                            {
+                                tempBool[layer, column, row] = Convert.ToBoolean(tempString2[tempInt]);
+                                tempInt++;
+                            }
+                        }
+                    }
+
+                    tempInt = Convert.ToInt32(streamReader.ReadLine());
+                    sequence = new Sequence(tempBool, tempInt);
+                    listBox.Items.Add("Sequence" + tempInt2);
+                    sequences.Add(sequence);
+                    tempInt2++;
+                    tempString = streamReader.ReadLine();
+                }
+                streamReader.Close();
+            }
+        }
+
+        private void DeleteState_Click(object sender, RoutedEventArgs e)
+        {
+            if (listBox.SelectedIndex != -1)
+            {
+                int selectedIndex = listBox.SelectedIndex;
+                listBox.Items.RemoveAt(selectedIndex);
+                sequences.RemoveAt(selectedIndex);
+                foreach (Button button in canvas.Children.OfType<Button>())
+                {
+                    button.Background = Brushes.White;
+                }
+                canvas.InvalidateVisual();
+            }
+            else
+            {
+                MessageBox.Show("Select state to delete.");
+            }
+        }
+
         private void listBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            
+            if (listBox.SelectedIndex >= 0 && listBox.SelectedIndex < sequences.Count)
+            {
+                int selectedIndex = listBox.SelectedIndex;
+                states = (bool[,,])sequences[selectedIndex].Diody.Clone();
+                DelayTextBox.Text = sequences[selectedIndex].Delay.ToString();
+                foreach (Button button in canvas.Children.OfType<Button>())
+                {
+                    var temp = button.Tag.ToString().Split(',');
+                    if (states[Convert.ToInt32(temp[0]), Convert.ToInt32(temp[1]), Convert.ToInt32(temp[2])])
+                    {
+                        button.Background = Brushes.Red;
+                    }
+                    else
+                    {
+                        button.Background = Brushes.White;
+                    }
+                }
+                canvas.InvalidateVisual();
+            }
         }
+
 
         private String ArrayToString(bool[,,] states)
         {
@@ -248,6 +310,7 @@ namespace ArduinoCubeList
             }
             return text+"}";
         }
+
         
     }
 }
