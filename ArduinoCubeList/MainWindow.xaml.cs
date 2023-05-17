@@ -135,7 +135,7 @@ namespace ArduinoCubeList
                 delay += sequence.Delay;
                 if (sequence != sequences[sequences.Count-1])
                 {
-                    diody += ",";
+                    diody += ",\n";
                     delay += ",";
                 }
                 else
