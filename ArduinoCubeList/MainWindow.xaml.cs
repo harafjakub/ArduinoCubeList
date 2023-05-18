@@ -302,13 +302,15 @@ namespace ArduinoCubeList
             if (listBox.SelectedIndex != -1)
             {
                 int selectedIndex = listBox.SelectedIndex;
-                if(listBox.Items.Count>1)
-                    listBox.SelectedIndex--;
                 listBox.Items.RemoveAt(selectedIndex);
                 sequences.RemoveAt(selectedIndex);
                 foreach (Button button in canvas.Children.OfType<Button>())
                 {
                     button.Background = Brushes.White;
+                }
+                for (int i = listBox.SelectedIndex + 1; i < listBox.Items.Count; i++)
+                {
+                    listBox.Items[i] = "Sequence" + (i+1);
                 }
                 canvas.InvalidateVisual();
             }
