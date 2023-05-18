@@ -160,75 +160,79 @@ namespace ArduinoCubeList
             sfd.ShowDialog();
             if (sfd.FileName != "")
             {
-
-                StreamWriter streamWriter = new StreamWriter(sfd.FileName);
-                foreach (Sequence sequence in sequences)
+                try
                 {
-                    for (int layer = 0; layer <= 4; layer++)
+                    StreamWriter streamWriter = new StreamWriter(sfd.FileName);
+                    foreach (Sequence sequence in sequences)
                     {
-                        for (int column = 0; column <= 4; column++)
+                        for (int layer = 0; layer <= 4; layer++)
                         {
-                            for (int row = 0; row <= 4; row++)
+                            for (int column = 0; column <= 4; column++)
                             {
-                                if(layer==4 && column == 4 && row == 4)
+                                for (int row = 0; row <= 4; row++)
                                 {
-                                    if (sequence.Diody[layer,column,row])
-                                        streamWriter.Write("true");
+                                    if (layer == 4 && column == 4 && row == 4)
+                                    {
+                                        if (sequence.Diody[layer, column, row])
+                                            streamWriter.Write("true");
+                                        else
+                                            streamWriter.Write("false");
+                                    }
                                     else
-                                        streamWriter.Write("false");
-                                }
-                                else
-                                {
-                                    if (sequence.Diody[layer, column, row])
-                                        streamWriter.Write("true,");
-                                    else
-                                        streamWriter.Write("false,");
+                                    {
+                                        if (sequence.Diody[layer, column, row])
+                                            streamWriter.Write("true,");
+                                        else
+                                            streamWriter.Write("false,");
+                                    }
                                 }
                             }
                         }
+                        streamWriter.Write("\n");
+                        streamWriter.WriteLine(sequence.Delay);
                     }
-                    streamWriter.Write("\n");
-                    streamWriter.WriteLine(sequence.Delay);
-                }
 
-                streamWriter.WriteLine("[END]");
+                    streamWriter.WriteLine("[END]");
 
-                foreach (Sequence sequence in sequences)
-                {
+                    foreach (Sequence sequence in sequences)
+                    {
+                        streamWriter.WriteLine("");
+                        streamWriter.WriteLine("const PROGMEM byte diody_r1[][25] = {" + ArrayToString(sequence.Diody) + "};");
+                        streamWriter.WriteLine("const PROGMEM int wait_r1[]={" + sequence.Delay + "};");
+                    }
+
                     streamWriter.WriteLine("");
-                    streamWriter.WriteLine("const PROGMEM byte diody_r1[][25] = {" + ArrayToString(sequence.Diody) + "};");
-                    streamWriter.WriteLine("const PROGMEM int wait_r1[]={" + sequence.Delay + "};");
-                }
-
-                streamWriter.WriteLine("");
-                streamWriter.WriteLine(diody);
-                streamWriter.WriteLine(delay);
-                streamWriter.Close();
-
-                if ((bool)ArduinoCheck.IsChecked)
-                {
-                    string folder = sfd.FileName.Substring(0, sfd.FileName.Length - 4);
-                    string plik = Path.GetFileName(sfd.FileName).Substring(0, Path.GetFileName(sfd.FileName).Length - 4) + ".ino";
-                    if (!Directory.Exists(folder))
-                        Directory.CreateDirectory(folder);
-
-
-                    streamWriter = new StreamWriter(folder + "/" + plik);
-
                     streamWriter.WriteLine(diody);
-                    streamWriter.WriteLine(delay + "\n");
-                    streamWriter.WriteLine(code[0]);
-                    streamWriter.WriteLine(code[1]);
+                    streamWriter.WriteLine(delay);
                     streamWriter.Close();
+
+                    if ((bool)ArduinoCheck.IsChecked)
+                    {
+                        string folder = sfd.FileName.Substring(0, sfd.FileName.Length - 4);
+                        string plik = Path.GetFileName(sfd.FileName).Substring(0, Path.GetFileName(sfd.FileName).Length - 4) + ".ino";
+                        if (!Directory.Exists(folder))
+                            Directory.CreateDirectory(folder);
+
+
+                        streamWriter = new StreamWriter(folder + "/" + plik);
+
+                        streamWriter.WriteLine(diody);
+                        streamWriter.WriteLine(delay + "\n");
+                        streamWriter.WriteLine(code[0]);
+                        streamWriter.WriteLine(code[1]);
+                        streamWriter.Close();
+                    }
+                }
+                catch
+                {
+                    MessageBox.Show("błąd zapisu pliku");
                 }
             }
         }
 
         private void LoadSequence_Click(object sender, RoutedEventArgs e)
         {
-            x = 1;
-            listBox.Items.Clear();
-            sequences.Clear();
+            bool clear = false;
             string tempString;
             string[] tempString2;
             int tempInt;
@@ -239,33 +243,56 @@ namespace ArduinoCubeList
             ofd.ShowDialog();
             if (ofd.FileName != "")
             {
-                StreamReader streamReader= new StreamReader(ofd.FileName);
-                tempString = streamReader.ReadLine();
-                while (!tempString.Equals("[END]"))
+                StreamReader streamReader = new StreamReader(ofd.FileName);
+                try
                 {
-                    tempString2 = tempString.Split(',');
-                    tempInt = 0;
-                    bool[,,] tempBool = new bool[5, 5, 5];
-                    for (int layer = 0; layer <= 4; layer++)
+                    tempString = streamReader.ReadLine();
+                    if (tempString != null)
                     {
-                        for (int column = 0; column <= 4; column++)
+                        while (!tempString.Equals("[END]") || streamReader.EndOfStream)
                         {
-                            for (int row = 0; row <= 4; row++)
+                            tempString2 = tempString.Split(',');
+                            tempInt = 0;
+                            bool[,,] tempBool = new bool[5, 5, 5];
+                            for (int layer = 0; layer <= 4; layer++)
                             {
-                                tempBool[layer, column, row] = Convert.ToBoolean(tempString2[tempInt]);
-                                tempInt++;
+                                for (int column = 0; column <= 4; column++)
+                                {
+                                    for (int row = 0; row <= 4; row++)
+                                    {
+                                        tempBool[layer, column, row] = Convert.ToBoolean(tempString2[tempInt]);
+                                        tempInt++;
+                                    }
+                                }
                             }
+
+                            if(!clear)
+                            {
+                                x = 1;
+                                listBox.Items.Clear();
+                                sequences.Clear();
+                                clear = true;
+                            }
+
+                            tempInt = Convert.ToInt32(streamReader.ReadLine());
+                            sequence = new Sequence(tempBool, tempInt);
+                            listBox.Items.Add("Sequence" + x);
+                            sequences.Add(sequence);
+                            x++;
+                            tempString = streamReader.ReadLine();
                         }
                     }
-
-                    tempInt = Convert.ToInt32(streamReader.ReadLine());
-                    sequence = new Sequence(tempBool, tempInt);
-                    listBox.Items.Add("Sequence" + x);
-                    sequences.Add(sequence);
-                    x++;
-                    tempString = streamReader.ReadLine();
+                    else
+                    {
+                        throw new Exception();
+                    }
+                }
+                catch
+                {
+                    MessageBox.Show("Błąd odczytu pliku");
                 }
                 streamReader.Close();
+             
             }
             CheckButtons();
         }
